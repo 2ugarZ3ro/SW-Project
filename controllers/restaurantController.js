@@ -13,9 +13,13 @@ exports.createRestaurant = async (req, res) => {
 exports.getAllRestaurants = async (req, res) => {
   try {
     const restaurants = await Restaurant.find();
-    res.json(restaurants);
+    res.status(200).json({
+      success: true,
+      count: restaurants.length,
+      data: restaurants,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: "Server Error" });
   }
 };
 

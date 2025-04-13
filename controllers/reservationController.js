@@ -14,11 +14,28 @@ exports.createReservation = async (req, res) => {
   }
 };
 
+exports.getAllReservations = async (req, res) => {
+  try {
+    const reservations = await Reservation.find();
+    res.status(200).json({
+      success: true,
+      count: reservations.length,
+      data: reservations,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
 exports.getMyReservations = async (req, res) => {
   try {
     const { userId } = req.params;
     const reservations = await Reservation.find({ userId }).populate("restaurantId");
-    res.json(reservations);
+    res.status(200).json({
+      success: true,
+      count: reservations.length,
+      data: reservations,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
