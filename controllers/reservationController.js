@@ -16,26 +16,28 @@ exports.createReservation = async (req, res) => {
 
 exports.getAllReservations = async (req, res) => {
   try {
-    const reservations = await Reservation.find();
-    res.status(200).json({
-      success: true,
-      count: reservations.length,
-      data: reservations,
-    });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can access this" });
+    }
+
+    const reservations = await Reservation.find().populate("user").populate("restaurant");
+    res.status(200).json(reservations);
   } catch (err) {
-    res.status(500).json({ success: false, error: "Server Error" });
+    res.status(500).json({ error: err.message });
   }
 };
 
 exports.getMyReservations = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const reservations = await Reservation.find({ userId }).populate("restaurantId");
-    res.status(200).json({
-      success: true,
-      count: reservations.length,
-      data: reservations,
-    });
+    let reservations;
+
+    if (req.user.role === "admin") {
+      reservations = await Reservation.find().populate("user").populate("restaurant");
+    } else {
+      reservations = await Reservation.find({ user: req.user.userId }).populate("restaurant");
+    }
+
+    res.status(200).json(reservations);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -43,11 +45,16 @@ exports.getMyReservations = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { date } = req.body;
+    const reservation = await Reservation.findById(req.params.id);
 
-    const updated = await Reservation.findByIdAndUpdate(id, { date }, { new: true });
-    res.json(updated);
+    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
+
+    if (req.user.role !== "admin" && reservation.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Not allowed to update this reservation" });
+    }
+
+    const updated = await Reservation.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -55,9 +62,16 @@ exports.updateReservation = async (req, res) => {
 
 exports.deleteReservation = async (req, res) => {
   try {
-    const { id } = req.params;
-    await Reservation.findByIdAndDelete(id);
-    res.json({ message: "Reservation deleted" });
+    const reservation = await Reservation.findById(req.params.id);
+
+    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
+
+    if (req.user.role !== "admin" && reservation.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Not allowed to delete this reservation" });
+    }
+
+    await Reservation.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Reservation deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
