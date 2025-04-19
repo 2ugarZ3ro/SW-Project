@@ -2,13 +2,25 @@ const Reservation = require("../models/Reservation");
 
 exports.createReservation = async (req, res) => {
   try {
-    const { userId, restaurantId, date } = req.body;
+    const { restaurantId, date, time, people } = req.body;
+    const userId = req.user._id;
 
-    const count = await Reservation.countDocuments({ userId });
-    if (count >= 3) return res.status(400).json({ message: "Limit 3 reservations" });
+    if (req.user.role === "user") {
+      const count = await Reservation.countDocuments({ user: userId });
+      if (count >= 3) {
+        return res.status(400).json({ message: "Limit 3 reservations" });
+      }
+    }
 
-    const reservation = await Reservation.create({ userId, restaurantId, date });
-    res.json(reservation);
+    const reservation = await Reservation.create({
+      user: userId,
+      restaurant: restaurantId,
+      date,
+      time,
+      people
+    });
+
+    res.status(201).json(reservation);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -21,7 +33,10 @@ exports.getAllReservations = async (req, res) => {
     }
 
     const reservations = await Reservation.find().populate("user").populate("restaurant");
-    res.status(200).json(reservations);
+    res.status(200).json({
+      total: reservations.length,
+      reservations
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -37,7 +52,10 @@ exports.getMyReservations = async (req, res) => {
       reservations = await Reservation.find({ user: req.user.userId }).populate("restaurant");
     }
 
-    res.status(200).json(reservations);
+    res.status(200).json({
+      total: reservations.length,
+      reservations
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
