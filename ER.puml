@@ -1,0 +1,39 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class User {
+  - _id: ObjectId
+  - name: String
+  - phone: String
+  - email: String
+  - password: String
+  - role: String << "user" || "admin" >>
+  - createdAt: Date
+  - updatedAt: Date
+}
+
+class Restaurant {
+  - _id: ObjectId
+  - name: String
+  - address: String
+  - phone: String
+  - openTime: String
+  - closeTime: String
+  - createdAt: Date
+  - updatedAt: Date
+}
+
+class Reservation {
+  - _id: ObjectId
+  - date: String
+  - time: String
+  - people: Number
+  - createdAt: Date
+  - updatedAt: Date
+}
+
+User "1" -- "0..*" Reservation : makes >
+Reservation "0..*" -- "1" Restaurant : for >
+Reservation "0..*" -- "1" User : belongs to >
+
+@enduml

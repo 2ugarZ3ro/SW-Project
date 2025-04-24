@@ -1,26 +1,36 @@
 const Reservation = require("../models/Reservation");
+const Restaurant = require("../models/Restaurant");
 
 exports.createReservation = async (req, res) => {
   try {
     const { restaurantId, date, time, people } = req.body;
     const userId = req.user._id;
 
-    if (req.user.role === "user") {
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+
+    const toMinutes = (t) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const timeMins = toMinutes(time);
+    const openMins = toMinutes(restaurant.openTime);
+    const closeMins = toMinutes(restaurant.closeTime);
+
+    if (timeMins < openMins || timeMins > closeMins) {
+      return res.status(400).json({ message: "Selected time is outside restaurant hours" });
+    }
+
+    if (req.user.role !== "admin") {
       const count = await Reservation.countDocuments({ user: userId });
       if (count >= 3) {
         return res.status(400).json({ message: "Limit 3 reservations" });
       }
-    }
+    }    
 
-    const reservation = await Reservation.create({
-      user: userId,
-      restaurant: restaurantId,
-      date,
-      time,
-      people
-    });
-
-    res.status(201).json(reservation);
+    const reservation = await Reservation.create({ user: userId, restaurant: restaurantId, date, time, people });
+    res.status(201).json(restaurant);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

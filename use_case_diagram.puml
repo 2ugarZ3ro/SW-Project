@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+
+actor User
+actor Admin
+
+rectangle "Restaurant Reservation System" {
+  
+  (Register) as UC_Register
+  (View Restaurants) as UC_ViewRestaurants
+  (Manage Own Reservation) as UC_ManageOwnResv
+  (Manage Restaurant) as UC_ManageRestaurant
+  (Manage Reservation) as UC_ManageAllResv
+}
+
+User -- UC_Register
+User -- UC_ViewRestaurants
+User -- UC_ManageOwnResv
+
+Admin -- UC_Register
+Admin -- UC_ManageRestaurant
+Admin -- UC_ManageAllResv
+
+@enduml

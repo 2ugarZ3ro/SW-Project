@@ -1,0 +1,20 @@
+@startuml getSingleRestaurant
+
+title "Get Single Restaurant"
+
+actor "Client" as client
+participant "<<javaScript>>\n:server" as server
+participant "<<router>>\n:restaurants" as routerRestaurant
+participant "<<controllers>>\nrestaurantController" as controllerRestaurant
+participant "<<model>>\nRestaurant" as modelRestaurant
+database "<<MongoDB>>\nrestaurants" as restaurantDB
+
+client -> server ++ : GET /api/v1/restaurants/:id
+server -> routerRestaurant ++ : app.use('/api/v1/restaurants', ...)
+routerRestaurant -> controllerRestaurant ++ : getSingleRestaurant(req.params.id)
+controllerRestaurant -> modelRestaurant ++ : findById(id)
+modelRestaurant -> restaurantDB ++ : lookup by ID
+restaurantDB --> modelRestaurant -- : restaurant
+controllerRestaurant --> client -- : restaurant details
+
+@enduml
