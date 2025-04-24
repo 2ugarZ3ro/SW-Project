@@ -73,16 +73,40 @@ exports.getMyReservations = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   try {
-    const reservation = await Reservation.findById(req.params.id);
+    const { date, time, people } = req.body;
+    const reservationId = req.params.id;
+
+    const reservation = await Reservation.findById(reservationId);
 
     if (!reservation) return res.status(404).json({ message: "Reservation not found" });
+
+    const restaurant = await Restaurant.findById(reservation.restaurant);
+
+    if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+
+    const toMinutes = (t) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const timeMins = toMinutes(time);
+    const openMins = toMinutes(restaurant.openTime);
+    const closeMins = toMinutes(restaurant.closeTime);
+
+    if (timeMins < openMins || timeMins > closeMins) {
+      return res.status(400).json({ message: "Selected time is outside restaurant hours" });
+    }
 
     if (req.user.role !== "admin" && reservation.user.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Not allowed to update this reservation" });
     }
 
-    const updated = await Reservation.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json(updated);
+    const updatedReservation = await Reservation.findByIdAndUpdate(
+      reservationId, 
+      { date, time, people }
+    );
+
+    res.status(200).json(updatedReservation);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
